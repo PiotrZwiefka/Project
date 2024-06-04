@@ -2,9 +2,9 @@
 #include <SFML/Graphics.hpp>
 
 //graphics: https://pixelfrog-assets.itch.io/tiny-swords
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
-const float PLAYER_SPEED = 100;
+const int WINDOW_WIDTH = 2400;
+const int WINDOW_HEIGHT = 1800;
+const float PLAYER_SPEED = 500;
 class GameObject {
 protected:
     int x,y;
@@ -28,7 +28,7 @@ public:
         texture.loadFromFile("Warrior_Purple.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
-        sprite.setTextureRect(sf::IntRect(0, 0, 192, 192));
+        sprite.setTextureRect(sf::IntRect(63, 45,78 , 91));
     }
 
     void draw(sf::RenderWindow& window) override {
@@ -64,26 +64,27 @@ public:
 
 
 
-// class Obstacle : public GameObject {
-// private:
-//     sf::Texture texture;
-//     sf::Sprite sprite;
-// public:
-//     Obstacle(float x, float y, float width, float height) {
-//         texture.loadFromFile("Tree.png");
-//         sprite.setTexture(texture);
-//         sprite.setPosition(x, y);
-//         sprite.setTextureRect(sf::IntRect(0, 0, width, height));
-//     }
+class Obstacle : public GameObject {
+private:
+    sf::Texture texture;
+    sf::Sprite sprite;
+public:
+    Obstacle(float x, float y) {
+        texture.loadFromFile("Tree.png");
+        sprite.setTexture(texture);
 
-//     void draw(sf::RenderWindow& window) override {
-//         window.draw(sprite);
-//     }
+        sprite.setTextureRect(sf::IntRect(43, 4, 154, 178));
+        sprite.setPosition(x, y);
+    }
 
-//     sf::FloatRect getBounds() const override {
-//         return sprite.getGlobalBounds();
-//     }
-// };
+    void draw(sf::RenderWindow& window) override {
+        window.draw(sprite);
+    }
+
+    sf::FloatRect getBounds() const override {
+        return sprite.getGlobalBounds();
+    }
+};
 
 
 
@@ -96,26 +97,30 @@ public:
 
 
 
-// class Scenery : public GameObject {
-// private:
-//     sf::Texture texture;
-//     sf::Sprite sprite;
-// public:
-//     Scenery(int windowWidth, int windowHeight) {
-//         texture.loadFromFile("Tilemap_Flat.png");
-//         sprite.setTexture(texture);
-//         float scaleX = static_cast<float>(windowWidth) / texture.getSize().x;
-//         float scaleY = static_cast<float>(windowHeight) / texture.getSize().y;
-//         sprite.setScale(scaleX, scaleY);
-//     }
-//     void draw(sf::RenderWindow& window) override {
-//         window.draw(sprite);
-//     }
+class Scenery : public GameObject {
+private:
+    sf::Texture texture;
+    sf::Sprite sprite;
+public:
+    Scenery(int windowWidth, int windowHeight) {
+        texture.loadFromFile("Tilemap_Flat.png");
+        sprite.setTexture(texture);
+        sprite.setTextureRect(sf::IntRect(0, 0, 192, 192));
+        float scaleX = static_cast<float>(windowWidth) / 192;
+        float scaleY = static_cast<float>(windowHeight) / 192;
+        sprite.setScale(scaleX, scaleY);
 
-//     sf::FloatRect getBounds() const override {
-//         return sprite.getGlobalBounds();
-//     }
-// };
+    }
+
+
+    void draw(sf::RenderWindow& window) override {
+        window.draw(sprite);
+    }
+
+    sf::FloatRect getBounds() const override {
+        return sprite.getGlobalBounds();
+    }
+};
 
 
 
@@ -143,18 +148,14 @@ int main()
 {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Labyrinth Game");
 
-    // Scenery background(WINDOW_WIDTH, WINDOW_HEIGHT);
+    Scenery background(WINDOW_WIDTH, WINDOW_HEIGHT);
     std::vector<GameObject*> objects;
-    // objects.push_back(&background);
-    // objects.push_back(new Obstacle(50, 70, 50, 200));
-    // objects.push_back(new Obstacle(200, 140, 50, 200));
-    // objects.push_back(new Obstacle(300, 100, 200, 50));
-    // objects.push_back(new Obstacle(600, 300, 200, 50));
-    // objects.push_back(new Obstacle(600, 120, 50, 200));
+    objects.push_back(&background);
 
-    // objects.push_back(new Obstacle(50, 270, 50, 200));
-    // objects.push_back(new Obstacle(200, 340, 50, 150));
-    // objects.push_back(new Obstacle(600, 320, 50, 200));
+        for (int i = 1; i <= 20; i++)
+        {
+        objects.push_back(new Obstacle(rand() % 2401, rand() % 1800));
+        }
     MainCharacter player(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     sf::Clock clock;
     while (window.isOpen()) {
@@ -179,14 +180,14 @@ int main()
         player.move(dx, dy);
 
         sf::FloatRect playerBounds = player.getBounds();
-        if (playerBounds.left < 0)
-            player.move(-playerBounds.left, 0);
-        if (playerBounds.top < 0)
-            player.move(0, -playerBounds.top);
-        if (playerBounds.left + playerBounds.width > WINDOW_WIDTH)
-            player.move(WINDOW_WIDTH - playerBounds.left - playerBounds.width, 0);
-        if (playerBounds.top + playerBounds.height > WINDOW_HEIGHT)
-            player.move(0, WINDOW_HEIGHT - playerBounds.top - playerBounds.height);
+        if ((playerBounds.left) < 0)
+            player.move(-(playerBounds.left), 0);
+        if ((playerBounds.top) < 0)
+            player.move(0, -(playerBounds.top));
+        if (playerBounds.left+ 78 > WINDOW_WIDTH)
+            player.move(WINDOW_WIDTH - playerBounds.left- 78, 0);
+        if (playerBounds.top+ 91 > WINDOW_HEIGHT)
+            player.move(0, WINDOW_HEIGHT - playerBounds.top- 91);
 
         for (size_t i = 1; i < objects.size(); ++i) {
             if (objects[i]->getBounds().intersects(player.getBounds())) {
