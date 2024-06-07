@@ -6,7 +6,7 @@
 const int WINDOW_WIDTH = 2400;
 const int WINDOW_HEIGHT = 1800;
 const float PLAYER_SPEED = 500.0f;
-const float COLLISION_SPEED_FACTOR = 0.5f;
+const float COLLISION_SPEED_FACTOR = 0.2f;
 const int OBSTACLE_SIZE = 256;
 const int BORDER_MARGIN = 200;
 
@@ -96,6 +96,29 @@ public:
     }
 };
 
+class PowerUpCoin : public GameObject {
+private:
+    sf::Texture texture;
+    sf::Sprite sprite;
+public:
+    PowerUpCoin(float x, float y) {
+        texture.loadFromFile("G_Idle.png");
+        sprite.setTexture(texture);
+        sprite.setPosition(x, y);
+    }
+    void draw(sf::RenderWindow& window) override {
+        window.draw(sprite);
+    }
+
+    sf::FloatRect getBounds() const override {
+        return sprite.getGlobalBounds();
+    }
+
+    void grantAdvantage() {
+        // Implement logic to grant advantage to the player
+    }
+};
+
 class Scenery : public GameObject {
 private:
     sf::Texture texture;
@@ -125,6 +148,7 @@ private:
     MainCharacter player;
     Scenery background;
     std::vector<GameObject*> objects;
+    int highScore;
 
     void processEvents() {
         sf::Event event;
@@ -165,8 +189,17 @@ private:
 
         for (size_t i = 1; i < objects.size(); ++i) {
             if (objects[i]->getBounds().intersects(player.getBounds())) {
-                isColliding = true;
-                break;
+                // Check if the object is a PowerUpCoin
+                PowerUpCoin* coin = dynamic_cast<PowerUpCoin*>(objects[i]);
+                if (coin) {
+                    highScore++;
+                    objects.erase(objects.begin() + i);
+                    delete coin;
+                    placeNewPowerUpCoin();
+                    i--;  // Adjust the index to account for the erased element
+                } else {
+                    isColliding = true;
+                }
             }
         }
 
@@ -186,7 +219,7 @@ private:
         // Draw player before obstacles
         player.draw(window);
 
-        // Draw obstacles last to overlap the player
+        // Draw obstacles and coins last to overlap the player
         for (size_t i = 1; i < objects.size(); ++i) {
             objects[i]->draw(window);
         }
@@ -225,14 +258,47 @@ private:
         }
     }
 
+    void placePowerUpCoins() {
+        for (int i = 1; i <= 5; ++i) {
+            placeNewPowerUpCoin();
+        }
+    }
+
+    void placeNewPowerUpCoin() {
+        bool placed = false;
+        while (!placed) {
+            float x = BORDER_MARGIN + rand() % (WINDOW_WIDTH - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+            float y = BORDER_MARGIN + rand() % (WINDOW_HEIGHT - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+            PowerUpCoin* newCoin = new PowerUpCoin(x, y);
+            sf::FloatRect newBounds = newCoin->getBounds();
+            bool overlapping = false;
+
+            for (size_t j = 1; j < objects.size(); ++j) {
+                if (isOverlapping(newBounds, objects[j]->getBounds())) {
+                    overlapping = true;
+                    break;
+                }
+            }
+
+            if (!overlapping) {
+                objects.push_back(newCoin);
+                placed = true;
+            } else {
+                delete newCoin;
+            }
+        }
+    }
+
 public:
     Game() :
         window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Labyrinth Game"),
         player(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
-        background(WINDOW_WIDTH, WINDOW_HEIGHT)
+        background(WINDOW_WIDTH, WINDOW_HEIGHT),
+        highScore(0)
     {
         objects.push_back(&background);
         placeObstacles();
+        placePowerUpCoins();
     }
 
     ~Game() {
