@@ -5,8 +5,10 @@
 
 const int WINDOW_WIDTH = 2400;
 const int WINDOW_HEIGHT = 1800;
-const float PLAYER_SPEED = 200.0f;
-const float COLLISION_SPEED_FACTOR = 0.35f;
+const float PLAYER_SPEED = 500.0f;
+const float COLLISION_SPEED_FACTOR = 0.5f;
+const int OBSTACLE_SIZE = 256;
+const int BORDER_MARGIN = 200;
 
 class GameObject {
 protected:
@@ -27,7 +29,6 @@ public:
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
         sprite.setTextureRect(sf::IntRect(63, 45, 78, 91));
-        sprite.setScale(1, 1);
     }
 
     void moveKey(char direction, float dt) {
@@ -81,7 +82,7 @@ public:
     Obstacle(float x, float y) {
         texture.loadFromFile("Tilemap_Flat.png");
         sprite.setTexture(texture);
-        sprite.setTextureRect(sf::IntRect(512, 192, 64, 64));
+        sprite.setTextureRect(sf::IntRect(192, 192, 64, 64));
         sprite.setPosition(x, y);
         sprite.setScale(4, 4);
     }
@@ -103,7 +104,7 @@ public:
     Scenery(int windowWidth, int windowHeight) {
         texture.loadFromFile("Tilemap_Flat.png");
         sprite.setTexture(texture);
-        sprite.setTextureRect(sf::IntRect(0, 0, 192, 192));
+        sprite.setTextureRect(sf::IntRect(320, 0, 192, 192));
         float scaleX = static_cast<float>(windowWidth) / 192;
         float scaleY = static_cast<float>(windowHeight) / 192;
         sprite.setScale(scaleX, scaleY);
@@ -179,25 +180,59 @@ private:
     void render() {
         window.clear();
 
+        // Draw scenery first
         background.draw(window);
 
+        // Draw player before obstacles
+        player.draw(window);
+
+        // Draw obstacles last to overlap the player
         for (size_t i = 1; i < objects.size(); ++i) {
             objects[i]->draw(window);
         }
-        player.draw(window);
+
         window.display();
+    }
+
+    bool isOverlapping(sf::FloatRect rect1, sf::FloatRect rect2) {
+        return rect1.intersects(rect2);
+    }
+
+    void placeObstacles() {
+        for (int i = 1; i <= 10; ++i) {
+            bool placed = false;
+            while (!placed) {
+                float x = BORDER_MARGIN + rand() % (WINDOW_WIDTH - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+                float y = BORDER_MARGIN + rand() % (WINDOW_HEIGHT - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+                Obstacle* newObstacle = new Obstacle(x, y);
+                sf::FloatRect newBounds = newObstacle->getBounds();
+                bool overlapping = false;
+
+                for (size_t j = 1; j < objects.size(); ++j) {
+                    if (isOverlapping(newBounds, objects[j]->getBounds())) {
+                        overlapping = true;
+                        break;
+                    }
+                }
+
+                if (!overlapping) {
+                    objects.push_back(newObstacle);
+                    placed = true;
+                } else {
+                    delete newObstacle;
+                }
+            }
+        }
     }
 
 public:
     Game() :
-        window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Game"),
+        window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Labyrinth Game"),
         player(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
         background(WINDOW_WIDTH, WINDOW_HEIGHT)
     {
         objects.push_back(&background);
-        for (int i = 1; i <= 10; ++i) {
-            objects.push_back(new Obstacle((rand() % 2401), (rand() % 1801)));
-        }
+        placeObstacles();
     }
 
     ~Game() {
