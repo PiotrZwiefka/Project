@@ -5,16 +5,23 @@
 #include <cmath>
 #include <iostream>
 
-const int WINDOW_WIDTH = 2400;
-const int WINDOW_HEIGHT = 1800;
+// Before playing, make sure the resolution is correct for your screen
+// so the game will not be stretched
+const int WINDOW_WIDTH = 3072;
+const int WINDOW_HEIGHT = 1920;
+
+// Settings you can change to make the game easier or harder
 const float PLAYER_SPEED = 500.0f;
 const float COLLISION_SPEED_FACTOR = 0.4f;
 const int OBSTACLE_SIZE = 256;
 const int BORDER_MARGIN = 200;
 const float ENEMY_SPEED = 100.0f;
-const int ATTACK_DAMAGE = 80;
+const int PL_ATTACK_DAMAGE = 80;
+const int BOT_ATTACK_DAMAGE = 20;
 const float ATTACK_COOLDOWN = 1.5f;
 const float ENEMY_SPAWN_TIME = 3.0f;
+const float ENEMY_ATTACK_COOLDOWN = 3.0f;
+
 class GameObject {
 protected:
     int x, y;
@@ -28,8 +35,9 @@ private:
     sf::Texture texture;
     sf::Sprite sprite;
     float speedFactor;
+    int health;
 public:
-    MainCharacter(float x, float y) : speedFactor(1.0f) {
+    MainCharacter(float x, float y) : speedFactor(1.0f),  health(100){
         texture.loadFromFile("Warrior_Purple.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
@@ -81,6 +89,14 @@ public:
     sf::Vector2f getPosition() const {
         return sprite.getPosition();
     }
+
+    void decreaseHealth(int amount) {
+        health -= amount;
+    }
+
+    int getHealth() const {
+        return health;
+    }
 };
 
 class Obstacle : public GameObject {
@@ -123,7 +139,7 @@ public:
         return sprite.getGlobalBounds();
     }
 
-    // void grantAdvantage() {} Granding Advantages maybe later
+    // void grantAdvantage() {} Granting Advantages maybe later
 };
 
 class Scenery : public GameObject {
@@ -154,6 +170,7 @@ private:
     sf::Texture texture;
     sf::Sprite sprite;
     int health;
+    sf::Clock attackClock;
 public:
     Enemy(float x, float y) : health(100) {
         texture.loadFromFile("Torch_Red.png");
@@ -186,6 +203,10 @@ public:
     int getHealth() const {
         return health;
     }
+
+    sf::Clock& getAttackClock() {
+        return attackClock;
+    }
 };
 
 class Game {
@@ -197,6 +218,11 @@ private:
     int highScore;
     sf::Clock attackCooldownClock;
     sf::Clock enemySpawnClock;
+    sf::Clock enemyHitClock;
+    bool gameOver;
+    sf::Font font;
+    sf::Text gameOverText;
+    sf::Text highScoreText;
 
     void processEvents() {
         sf::Event event;
@@ -207,6 +233,8 @@ private:
     }
 
     void handleInput(float dt) {
+        if (gameOver) return;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             player.moveKey('L', dt);
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
@@ -221,8 +249,8 @@ private:
                 for (size_t i = 1; i < objects.size(); ++i) {
                     Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
                     if (enemy && enemy->getBounds().intersects(player.getBounds())) {
-                        enemy->decreaseHealth(ATTACK_DAMAGE);
-                        if (enemy->getHealth() <=0) {
+                        enemy->decreaseHealth(PL_ATTACK_DAMAGE);
+                        if (enemy->getHealth() <= 0) {
                             objects.erase(objects.begin() + i);
                             delete enemy;
                             i--;
@@ -231,15 +259,20 @@ private:
                 }
                 attackCooldownClock.restart();
             }
-            else{
-                std::cout<< "cooldown:" << ATTACK_COOLDOWN - attackCooldownClock.getElapsedTime().asSeconds();
-            }
         }
     }
 
     void update(float dt) {
+        if (gameOver) return;
+
         handleInput(dt);
         checkCollisions();
+
+        if (player.getHealth() <= 0) {
+            gameOver = true;
+            displayGameOver();
+            return;
+        }
 
         sf::FloatRect playerBounds = player.getBounds();
         if (playerBounds.left < 0)
@@ -259,6 +292,12 @@ private:
             Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
             if (enemy) {
                 enemy->moveTowards(player, dt);
+                if (enemy->getBounds().intersects(player.getBounds())) {
+                    if (enemy->getAttackClock().getElapsedTime().asSeconds() >= ENEMY_ATTACK_COOLDOWN) {
+                        player.decreaseHealth(BOT_ATTACK_DAMAGE);
+                        enemy->getAttackClock().restart();
+                    }
+                }
             }
         }
     }
@@ -267,7 +306,7 @@ private:
         bool isColliding = false;
 
         for (size_t i = 1; i < objects.size(); ++i) {
-            if (objects[i]->getBounds().intersects(player.getBounds())) {
+            if (isOverlapping(player.getBounds(), objects[i]->getBounds())) {
                 PowerUpCoin* coin = dynamic_cast<PowerUpCoin*>(objects[i]);
                 if (coin) {
                     highScore++;
@@ -300,6 +339,11 @@ private:
         // Draw obstacles, enemies, and coins last to overlap the player
         for (size_t i = 1; i < objects.size(); ++i) {
             objects[i]->draw(window);
+        }
+
+        if (gameOver) {
+            window.draw(gameOverText);
+            window.draw(highScoreText);
         }
 
         window.display();
@@ -337,7 +381,7 @@ private:
     }
 
     void placePowerUpCoins() {
-        for (int i = 1; i <= 5; ++i) {
+        for (int i = 1; i <= 5; i++) {
             placeNewPowerUpCoin();
         }
     }
@@ -392,14 +436,33 @@ private:
 
         Enemy* newEnemy = new Enemy(x, y);
         objects.push_back(newEnemy);
-
     }
+
+    void displayGameOver() {
+        if (!font.loadFromFile("arial.ttf")) {
+            std::cerr << "Error loading font\n";
+            return;
+        }
+        gameOverText.setFont(font);
+        gameOverText.setString("Game Over");
+        gameOverText.setCharacterSize(50);
+        gameOverText.setFillColor(sf::Color::Red);
+        gameOverText.setPosition(WINDOW_WIDTH / 2 - gameOverText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2 - 100);
+
+        highScoreText.setFont(font);
+        highScoreText.setString("High Score: " + std::to_string(highScore));
+        highScoreText.setCharacterSize(40);
+        highScoreText.setFillColor(sf::Color::White);
+        highScoreText.setPosition(WINDOW_WIDTH / 2 - highScoreText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2);
+    }
+
 public:
     Game() :
         window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Knight"),
         player(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
         background(WINDOW_WIDTH, WINDOW_HEIGHT),
-        highScore(0)
+        highScore(0),
+        gameOver(false)
     {
         objects.push_back(&background);
         placeObstacles();
