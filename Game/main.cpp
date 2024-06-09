@@ -2,13 +2,18 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <cstdlib>
+#include <cmath>
+#include <iostream>
 
 const int WINDOW_WIDTH = 2400;
 const int WINDOW_HEIGHT = 1800;
 const float PLAYER_SPEED = 500.0f;
-const float COLLISION_SPEED_FACTOR = 0.2f;
+const float COLLISION_SPEED_FACTOR = 0.4f;
 const int OBSTACLE_SIZE = 256;
 const int BORDER_MARGIN = 200;
+const float ENEMY_SPEED = 100.0f;
+const int ATTACK_DAMAGE = 80;
+const float ATTACK_COOLDOWN = 2.0f;
 
 class GameObject {
 protected:
@@ -72,6 +77,10 @@ public:
     float getSpeedFactor() const {
         return speedFactor;
     }
+
+    sf::Vector2f getPosition() const {
+        return sprite.getPosition();
+    }
 };
 
 class Obstacle : public GameObject {
@@ -114,9 +123,7 @@ public:
         return sprite.getGlobalBounds();
     }
 
-    void grantAdvantage() {
-        // Implement logic to grant advantage to the player
-    }
+    // void grantAdvantage() {} Granding Advantages maybe later
 };
 
 class Scenery : public GameObject {
@@ -142,6 +149,45 @@ public:
     }
 };
 
+class Enemy : public GameObject {
+private:
+    sf::Texture texture;
+    sf::Sprite sprite;
+    int health;
+public:
+    Enemy(float x, float y) : health(100) {
+        texture.loadFromFile("Enemy.png");
+        sprite.setTexture(texture);
+        sprite.setPosition(x, y);
+        sprite.setTextureRect(sf::IntRect(0, 0, 64, 64));
+    }
+
+    void draw(sf::RenderWindow& window) override {
+        window.draw(sprite);
+    }
+
+    sf::FloatRect getBounds() const override {
+        return sprite.getGlobalBounds();
+    }
+
+    void moveTowards(MainCharacter& player, float dt) {
+        sf::Vector2f playerPos = player.getPosition();
+        sf::Vector2f enemyPos = sprite.getPosition();
+        sf::Vector2f direction = playerPos - enemyPos;
+        float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+        direction /= length;  // Normalize the direction vector
+        sprite.move(direction * ENEMY_SPEED * dt);
+    }
+
+    void decreaseHealth(int amount) {
+        health -= amount;
+    }
+
+    int getHealth() const {
+        return health;
+    }
+};
+
 class Game {
 private:
     sf::RenderWindow window;
@@ -149,6 +195,8 @@ private:
     Scenery background;
     std::vector<GameObject*> objects;
     int highScore;
+    sf::Clock enemySpawnClock;
+    sf::Clock attackCooldownClock;
 
     void processEvents() {
         sf::Event event;
@@ -167,6 +215,26 @@ private:
             player.moveKey('U', dt);
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
             player.moveKey('D', dt);
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::J)) {
+            if (attackCooldownClock.getElapsedTime().asSeconds() >= ATTACK_COOLDOWN) {
+                for (size_t i = 1; i < objects.size(); ++i) {
+                    Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
+                    if (enemy && enemy->getBounds().intersects(player.getBounds())) {
+                        enemy->decreaseHealth(ATTACK_DAMAGE);
+                        if (enemy->getHealth() <=0) {
+                            objects.erase(objects.begin() + i);
+                            delete enemy;
+                            i--;
+                        }
+                    }
+                }
+                attackCooldownClock.restart();
+            }
+            else{
+                std::cout<< "cooldown:" << ATTACK_COOLDOWN - attackCooldownClock.getElapsedTime().asSeconds();
+            }
+        }
     }
 
     void update(float dt) {
@@ -182,6 +250,18 @@ private:
             player.move(WINDOW_WIDTH - playerBounds.left - playerBounds.width, 0);
         if (playerBounds.top + playerBounds.height > WINDOW_HEIGHT)
             player.move(0, WINDOW_HEIGHT - playerBounds.top - playerBounds.height);
+
+        if (enemySpawnClock.getElapsedTime().asSeconds() >= 1.0f) {
+            spawnEnemy();
+            enemySpawnClock.restart();
+        }
+
+        for (size_t i = 1; i < objects.size(); ++i) {
+            Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
+            if (enemy) {
+                enemy->moveTowards(player, dt);
+            }
+        }
     }
 
     void checkCollisions() {
@@ -189,14 +269,13 @@ private:
 
         for (size_t i = 1; i < objects.size(); ++i) {
             if (objects[i]->getBounds().intersects(player.getBounds())) {
-                // Check if the object is a PowerUpCoin
                 PowerUpCoin* coin = dynamic_cast<PowerUpCoin*>(objects[i]);
                 if (coin) {
                     highScore++;
                     objects.erase(objects.begin() + i);
                     delete coin;
                     placeNewPowerUpCoin();
-                    i--;  // Adjust the index to account for the erased element
+                    i--;
                 } else {
                     isColliding = true;
                 }
@@ -219,7 +298,7 @@ private:
         // Draw player before obstacles
         player.draw(window);
 
-        // Draw obstacles and coins last to overlap the player
+        // Draw obstacles, enemies, and coins last to overlap the player
         for (size_t i = 1; i < objects.size(); ++i) {
             objects[i]->draw(window);
         }
@@ -287,6 +366,33 @@ private:
                 delete newCoin;
             }
         }
+    }
+
+    void spawnEnemy() {
+        int side = rand() % 4;
+        float x = 0, y = 0;
+
+        switch (side) {
+        case 0:
+            x = rand() % WINDOW_WIDTH;
+            y = 0;
+            break;
+        case 1:
+            x = rand() % WINDOW_WIDTH;
+            y = WINDOW_HEIGHT;
+            break;
+        case 2:
+            x = 0;
+            y = rand() % WINDOW_HEIGHT;
+            break;
+        case 3:
+            x = WINDOW_WIDTH;
+            y = rand() % WINDOW_HEIGHT;
+            break;
+        }
+
+        Enemy* newEnemy = new Enemy(x, y);
+        objects.push_back(newEnemy);
     }
 
 public:
