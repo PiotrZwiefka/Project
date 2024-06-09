@@ -13,8 +13,8 @@ const int OBSTACLE_SIZE = 256;
 const int BORDER_MARGIN = 200;
 const float ENEMY_SPEED = 100.0f;
 const int ATTACK_DAMAGE = 80;
-const float ATTACK_COOLDOWN = 2.0f;
-
+const float ATTACK_COOLDOWN = 1.5f;
+const float ENEMY_SPAWN_TIME = 3.0f;
 class GameObject {
 protected:
     int x, y;
@@ -156,10 +156,10 @@ private:
     int health;
 public:
     Enemy(float x, float y) : health(100) {
-        texture.loadFromFile("Enemy.png");
+        texture.loadFromFile("Torch_Red.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
-        sprite.setTextureRect(sf::IntRect(0, 0, 64, 64));
+        sprite.setTextureRect(sf::IntRect(53, 54, 74, 79));
     }
 
     void draw(sf::RenderWindow& window) override {
@@ -175,7 +175,7 @@ public:
         sf::Vector2f enemyPos = sprite.getPosition();
         sf::Vector2f direction = playerPos - enemyPos;
         float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-        direction /= length;  // Normalize the direction vector
+        direction /= length;
         sprite.move(direction * ENEMY_SPEED * dt);
     }
 
@@ -195,8 +195,8 @@ private:
     Scenery background;
     std::vector<GameObject*> objects;
     int highScore;
-    sf::Clock enemySpawnClock;
     sf::Clock attackCooldownClock;
+    sf::Clock enemySpawnClock;
 
     void processEvents() {
         sf::Event event;
@@ -216,7 +216,7 @@ private:
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
             player.moveKey('D', dt);
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::J)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
             if (attackCooldownClock.getElapsedTime().asSeconds() >= ATTACK_COOLDOWN) {
                 for (size_t i = 1; i < objects.size(); ++i) {
                     Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
@@ -250,8 +250,7 @@ private:
             player.move(WINDOW_WIDTH - playerBounds.left - playerBounds.width, 0);
         if (playerBounds.top + playerBounds.height > WINDOW_HEIGHT)
             player.move(0, WINDOW_HEIGHT - playerBounds.top - playerBounds.height);
-
-        if (enemySpawnClock.getElapsedTime().asSeconds() >= 1.0f) {
+        if (enemySpawnClock.getElapsedTime().asSeconds() >= ENEMY_SPAWN_TIME) {
             spawnEnemy();
             enemySpawnClock.restart();
         }
@@ -393,11 +392,11 @@ private:
 
         Enemy* newEnemy = new Enemy(x, y);
         objects.push_back(newEnemy);
-    }
 
+    }
 public:
     Game() :
-        window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Labyrinth Game"),
+        window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Knight"),
         player(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
         background(WINDOW_WIDTH, WINDOW_HEIGHT),
         highScore(0)
