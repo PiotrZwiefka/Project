@@ -223,6 +223,8 @@ private:
     sf::Font font;
     sf::Text gameOverText;
     sf::Text highScoreText;
+    sf::Texture bannerTexture;
+    sf::Sprite bannerSprite;
 
     void processEvents() {
         sf::Event event;
@@ -342,6 +344,7 @@ private:
         }
 
         if (gameOver) {
+            window.draw(bannerSprite);
             window.draw(gameOverText);
             window.draw(highScoreText);
         }
@@ -454,6 +457,14 @@ private:
         highScoreText.setCharacterSize(40);
         highScoreText.setFillColor(sf::Color::White);
         highScoreText.setPosition(WINDOW_WIDTH / 2 - highScoreText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2);
+
+        if (!bannerTexture.loadFromFile("Gameover.png")) {
+            std::cerr << "Error loading banner texture\n";
+            return;
+        }
+        bannerSprite.setTexture(bannerTexture);
+        bannerSprite.setPosition(WINDOW_WIDTH / 2 - bannerSprite.getLocalBounds().width * 2, WINDOW_HEIGHT / 2 - bannerSprite.getLocalBounds().height * 2);
+        bannerSprite.setScale(4, 4);
     }
 
 public:
