@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <map>
 
 // Before playing, make sure the resolution is correct for your screen
 // so the game will not be stretched
@@ -21,6 +22,7 @@ const int BOT_ATTACK_DAMAGE = 20;
 const float ATTACK_COOLDOWN = 1.5f;
 const float ENEMY_SPAWN_TIME = 3.0f;
 const float ENEMY_ATTACK_COOLDOWN = 3.0f;
+
 
 class GameObject {
 protected:
@@ -218,14 +220,13 @@ private:
     int highScore;
     sf::Clock attackCooldownClock;
     sf::Clock enemySpawnClock;
-    sf::Clock enemyHitClock;
     bool gameOver;
     sf::Font font;
     sf::Text gameOverText;
     sf::Text highScoreText;
     sf::Texture bannerTexture;
     sf::Sprite bannerSprite;
-
+    std::map<Enemy*, sf::Clock> enemyCollisionClocks;
     void processEvents() {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -295,10 +296,15 @@ private:
             if (enemy) {
                 enemy->moveTowards(player, dt);
                 if (enemy->getBounds().intersects(player.getBounds())) {
-                    if (enemy->getAttackClock().getElapsedTime().asSeconds() >= ENEMY_ATTACK_COOLDOWN) {
+                    auto it = enemyCollisionClocks.find(enemy);
+                    if (it == enemyCollisionClocks.end()) {
+                        enemyCollisionClocks[enemy].restart();
+                    } else if (it->second.getElapsedTime().asSeconds() >= ENEMY_ATTACK_COOLDOWN) {
                         player.decreaseHealth(BOT_ATTACK_DAMAGE);
-                        enemy->getAttackClock().restart();
+                        it->second.restart();
                     }
+                } else {
+                    enemyCollisionClocks.erase(enemy);
                 }
             }
         }
@@ -455,7 +461,7 @@ private:
         highScoreText.setFont(font);
         highScoreText.setString("High Score: " + std::to_string(highScore));
         highScoreText.setCharacterSize(40);
-        highScoreText.setFillColor(sf::Color::White);
+        highScoreText.setFillColor(sf::Color::Black);
         highScoreText.setPosition(WINDOW_WIDTH / 2 - highScoreText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2);
 
         if (!bannerTexture.loadFromFile("Gameover.png")) {
