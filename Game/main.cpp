@@ -94,10 +94,15 @@ public:
 
     void decreaseHealth(int amount) {
         health -= amount;
+        sprite.setTextureRect(sf::IntRect(0,19,13,19));
     }
 
     int getHealth() const {
         return health;
+    }
+    void hit()
+    {
+        sprite.setTextureRect(sf::IntRect(13,19,13,19));
     }
 };
 
@@ -285,6 +290,7 @@ private:
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
             if (attackCooldownClock.getElapsedTime().asSeconds() >= ATTACK_COOLDOWN) {
+                player.hit();
                 for (size_t i = 1; i < objects.size(); ++i) {
                     Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
                     if (enemy && enemy->getBounds().intersects(player.getBounds())) {
