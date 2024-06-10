@@ -23,7 +23,6 @@ const float ATTACK_COOLDOWN = 1.5f;
 const float ENEMY_SPAWN_TIME = 3.0f;
 const float ENEMY_ATTACK_COOLDOWN = 3.0f;
 
-
 class GameObject {
 protected:
     int x, y;
@@ -226,7 +225,10 @@ private:
     sf::Text highScoreText;
     sf::Texture bannerTexture;
     sf::Sprite bannerSprite;
+    sf::Texture cornerBannerTexture;
+    sf::Sprite cornerBannerSprite;
     std::map<Enemy*, sf::Clock> enemyCollisionClocks;
+
     void processEvents() {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -295,6 +297,7 @@ private:
             Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
             if (enemy) {
                 enemy->moveTowards(player, dt);
+
                 if (enemy->getBounds().intersects(player.getBounds())) {
                     auto it = enemyCollisionClocks.find(enemy);
                     if (it == enemyCollisionClocks.end()) {
@@ -348,6 +351,9 @@ private:
         for (size_t i = 1; i < objects.size(); ++i) {
             objects[i]->draw(window);
         }
+
+        // Draw the banner at the bottom right corner
+        window.draw(cornerBannerSprite);
 
         if (gameOver) {
             window.draw(bannerSprite);
@@ -484,6 +490,13 @@ public:
         objects.push_back(&background);
         placeObstacles();
         placePowerUpCoins();
+
+        if (!cornerBannerTexture.loadFromFile("Controls.png")) {
+            std::cerr << "Error loading corner banner texture\n";
+        }
+        cornerBannerSprite.setTexture(cornerBannerTexture);
+        cornerBannerSprite.setPosition(WINDOW_WIDTH - cornerBannerTexture.getSize().x *4, WINDOW_HEIGHT - cornerBannerTexture.getSize().y*4);
+        cornerBannerSprite.setScale(4, 4);
     }
 
     ~Game() {
