@@ -19,7 +19,7 @@ const int PL_ATTACK_DAMAGE = 80;
 const int BOT_ATTACK_DAMAGE = 20;
 const float ATTACK_COOLDOWN = 1.5f;
 const float ENEMY_SPAWN_TIME = 3.0f;
-const float ENEMY_ATTACK_COOLDOWN = 1.0f;
+const float ENEMY_ATTACK_COOLDOWN = 2.0f;
 
 class GameObject {
 protected:
@@ -37,10 +37,11 @@ private:
     int health;
 public:
     MainCharacter(float x, float y) : speedFactor(1.0f),  health(100){
-        texture.loadFromFile("Warrior_Purple.png");
+        texture.loadFromFile("knight.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
-        sprite.setTextureRect(sf::IntRect(63, 45, 78, 91));
+        sprite.setTextureRect(sf::IntRect(0,0,13,19));
+        sprite.setScale(5,5);
     }
 
     void moveKey(char direction, float dt) {
@@ -48,9 +49,11 @@ public:
         float speed = PLAYER_SPEED * speedFactor;
         switch (direction) {
         case 'L':
+            sprite.setTextureRect(sf::IntRect(13,0,13,19));
             offsetX = -speed * dt;
             break;
         case 'R':
+            sprite.setTextureRect(sf::IntRect(0,0,13,19));
             offsetX = speed * dt;
             break;
         case 'U':
@@ -183,16 +186,32 @@ private:
     sf::Sprite sprite;
     int health;
     sf::Clock attackClock;
+    int currentFrame;
+    float frameTime;
+    sf::Clock animationClock;
 public:
-    Enemy(float x, float y) : health(100) {
+    Enemy(float x, float y) : health(100), currentFrame(0), frameTime(0.1f) {
         texture.loadFromFile("slime.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
-        sprite.setTextureRect(sf::IntRect(53, 54, 74, 79));
+        sprite.setTextureRect(sf::IntRect(29, 9, 14, 15));
+        sprite.setScale(5, 5);
     }
 
     void draw(sf::RenderWindow& window) override {
         window.draw(sprite);
+    }
+
+    void updateAnimation(float dt) {
+        if (animationClock.getElapsedTime().asSeconds() >= frameTime) {
+            currentFrame = (currentFrame + 1) % 6;
+            int column = currentFrame % 3 + 1;
+            int row = currentFrame / 3;
+            int left = column * 24 + 5;
+            int top = row * 24 +9;
+            sprite.setTextureRect(sf::IntRect(left, top, 14, 15));
+            animationClock.restart();
+        }
     }
 
     sf::FloatRect getBounds() const override {
@@ -312,6 +331,7 @@ private:
             Enemy* enemy = dynamic_cast<Enemy*>(objects[i]);
             if (enemy) {
                 enemy->moveTowards(player, dt);
+                enemy->updateAnimation(dt);
 
                 if (enemy->getBounds().intersects(player.getBounds())) {
                     auto it = enemyCollisionClocks.find(enemy);
@@ -332,6 +352,7 @@ private:
             }
         }
     }
+
 
     void checkCollisions() {
         bool isColliding = false;
