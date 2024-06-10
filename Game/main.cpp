@@ -12,8 +12,8 @@ const int WINDOW_WIDTH = 2560;
 const int WINDOW_HEIGHT = 1440;
 
 // Settings you can change to make the game easier or harder
-const float PLAYER_SPEED = 500.0f;
-const float COLLISION_SPEED_FACTOR = 0.4f;
+const float PLAYER_SPEED = 300.0f;
+const float COLLISION_SPEED_FACTOR = 0.5f;
 const float ENEMY_SPEED = 100.0f;
 const int PL_ATTACK_DAMAGE = 80;
 const int BOT_ATTACK_DAMAGE = 20;
@@ -124,12 +124,27 @@ class PowerUpCoin : public GameObject {
 private:
     sf::Texture texture;
     sf::Sprite sprite;
+    int currentFrame;
+    float frameTime;
+    sf::Clock animationClock;
 public:
-    PowerUpCoin(float x, float y) {
-        texture.loadFromFile("G_Idle.png");
+    PowerUpCoin(float x, float y) : currentFrame(0), frameTime(0.1f) {
+        texture.loadFromFile("coin.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
+        sprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
+        sprite.setScale(6,6);
     }
+
+    void update(float dt) {
+        if (animationClock.getElapsedTime().asSeconds() >= frameTime) {
+            currentFrame = (currentFrame + 1) % 12;
+            int left = currentFrame * 16;
+            sprite.setTextureRect(sf::IntRect(left, 0, 16, 16));
+            animationClock.restart();
+        }
+    }
+
     void draw(sf::RenderWindow& window) override {
         window.draw(sprite);
     }
@@ -137,8 +152,6 @@ public:
     sf::FloatRect getBounds() const override {
         return sprite.getGlobalBounds();
     }
-
-    // void grantAdvantage() {} Granting Advantages maybe later
 };
 
 class Scenery : public GameObject {
@@ -172,7 +185,7 @@ private:
     sf::Clock attackClock;
 public:
     Enemy(float x, float y) : health(100) {
-        texture.loadFromFile("Torch_Red.png");
+        texture.loadFromFile("slime.png");
         sprite.setTexture(texture);
         sprite.setPosition(x, y);
         sprite.setTextureRect(sf::IntRect(53, 54, 74, 79));
@@ -274,7 +287,7 @@ private:
 
         handleInput(dt);
         checkCollisions();
-        healthSprite.setTextureRect(sf::IntRect(0, 0, player.getHealth()* 10, 48));
+        healthSprite.setTextureRect(sf::IntRect(0, 0, player.getHealth() * 10, 48));
         if (player.getHealth() <= 0) {
             gameOver = true;
             displayGameOver();
@@ -310,6 +323,11 @@ private:
                     }
                 } else {
                     enemyCollisionClocks.erase(enemy);
+                }
+            } else {
+                PowerUpCoin* coin = dynamic_cast<PowerUpCoin*>(objects[i]);
+                if (coin) {
+                    coin->update(dt);
                 }
             }
         }
@@ -459,19 +477,19 @@ private:
     }
 
     void displayGameOver() {
-        if (!font.loadFromFile("arial.ttf")) {
+        if (!font.loadFromFile("PixelOperator8.ttf")) {
             std::cerr << "Error loading font\n";
             return;
         }
         gameOverText.setFont(font);
         gameOverText.setString("Game Over");
-        gameOverText.setCharacterSize(50);
+        gameOverText.setCharacterSize(30);
         gameOverText.setFillColor(sf::Color::Red);
         gameOverText.setPosition(WINDOW_WIDTH / 2 - gameOverText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2 - 100);
 
         highScoreText.setFont(font);
         highScoreText.setString("High Score: " + std::to_string(highScore));
-        highScoreText.setCharacterSize(40);
+        highScoreText.setCharacterSize(20);
         highScoreText.setFillColor(sf::Color::Black);
         highScoreText.setPosition(WINDOW_WIDTH / 2 - highScoreText.getLocalBounds().width / 2, WINDOW_HEIGHT / 2);
 
