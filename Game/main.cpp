@@ -14,8 +14,6 @@ const int WINDOW_HEIGHT = 1440;
 // Settings you can change to make the game easier or harder
 const float PLAYER_SPEED = 500.0f;
 const float COLLISION_SPEED_FACTOR = 0.4f;
-const int OBSTACLE_SIZE = 256;
-const int BORDER_MARGIN = 200;
 const float ENEMY_SPEED = 100.0f;
 const int PL_ATTACK_DAMAGE = 80;
 const int BOT_ATTACK_DAMAGE = 20;
@@ -379,8 +377,8 @@ private:
         for (int i = 1; i <= 10; ++i) {
             bool placed = false;
             while (!placed) {
-                float x = BORDER_MARGIN + rand() % (WINDOW_WIDTH - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
-                float y = BORDER_MARGIN + rand() % (WINDOW_HEIGHT - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+                float x = 200 + rand() % (WINDOW_WIDTH - 2 * 200 - 256);
+                float y = 200 + rand() % (WINDOW_HEIGHT - 2 * 200 - 256);
                 Obstacle* newObstacle = new Obstacle(x, y);
                 sf::FloatRect newBounds = newObstacle->getBounds();
                 bool overlapping = false;
@@ -411,8 +409,8 @@ private:
     void placeNewPowerUpCoin() {
         bool placed = false;
         while (!placed) {
-            float x = BORDER_MARGIN + rand() % (WINDOW_WIDTH - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
-            float y = BORDER_MARGIN + rand() % (WINDOW_HEIGHT - 2 * BORDER_MARGIN - OBSTACLE_SIZE);
+            float x = 200 + rand() % (WINDOW_WIDTH - 2 * 200 - 256);
+            float y = 200 + rand() % (WINDOW_HEIGHT - 2 * 200 - 256);
             PowerUpCoin* newCoin = new PowerUpCoin(x, y);
             sf::FloatRect newBounds = newCoin->getBounds();
             bool overlapping = false;
@@ -505,20 +503,20 @@ public:
         cornerBannerSprite.setPosition(WINDOW_WIDTH - cornerBannerTexture.getSize().x *2, WINDOW_HEIGHT - cornerBannerTexture.getSize().y*2);
         cornerBannerSprite.setScale(2, 2);
 
-    if (!healthTexture.loadFromFile("health.png")) {
-        std::cerr << "Error loading corner health texture\n";
-    }
-    healthSprite.setTexture(healthTexture);
-    healthSprite.setPosition(51, 0);
-    healthSprite.setScale(1, 1);
+        if (!healthTexture.loadFromFile("health.png")) {
+            std::cerr << "Error loading corner health texture\n";
+        }
+        healthSprite.setTexture(healthTexture);
+        healthSprite.setPosition(51, 0);
+        healthSprite.setScale(1, 1);
 
-    if (!healthbarTexture.loadFromFile("healthbar.png")) {
-        std::cerr << "Error loading corner healthbar texture\n";
+        if (!healthbarTexture.loadFromFile("healthbar.png")) {
+            std::cerr << "Error loading corner healthbar texture\n";
+        }
+        healthbarSprite.setTexture(healthbarTexture);
+        healthbarSprite.setPosition(0, 0);
+        healthbarSprite.setScale(1, 1);
     }
-    healthbarSprite.setTexture(healthbarTexture);
-    healthbarSprite.setPosition(0, 0);
-    healthbarSprite.setScale(1, 1);
-}
     ~Game() {
         for (size_t i = 1; i < objects.size(); ++i) {
             delete objects[i];
