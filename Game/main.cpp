@@ -8,8 +8,8 @@
 
 // Before playing, make sure the resolution is correct for your screen
 // so the game will not be stretched
-const int WINDOW_WIDTH = 3072;
-const int WINDOW_HEIGHT = 1920;
+const int WINDOW_WIDTH = 2560;
+const int WINDOW_HEIGHT = 1440;
 
 // Settings you can change to make the game easier or harder
 const float PLAYER_SPEED = 500.0f;
@@ -21,7 +21,7 @@ const int PL_ATTACK_DAMAGE = 80;
 const int BOT_ATTACK_DAMAGE = 20;
 const float ATTACK_COOLDOWN = 1.5f;
 const float ENEMY_SPAWN_TIME = 3.0f;
-const float ENEMY_ATTACK_COOLDOWN = 3.0f;
+const float ENEMY_ATTACK_COOLDOWN = 1.0f;
 
 class GameObject {
 protected:
@@ -227,6 +227,10 @@ private:
     sf::Sprite bannerSprite;
     sf::Texture cornerBannerTexture;
     sf::Sprite cornerBannerSprite;
+    sf::Texture healthTexture;
+    sf::Sprite healthSprite;
+    sf::Texture healthbarTexture;
+    sf::Sprite healthbarSprite;
     std::map<Enemy*, sf::Clock> enemyCollisionClocks;
 
     void processEvents() {
@@ -272,7 +276,7 @@ private:
 
         handleInput(dt);
         checkCollisions();
-
+        healthSprite.setTextureRect(sf::IntRect(0, 0, player.getHealth()* 10, 48));
         if (player.getHealth() <= 0) {
             gameOver = true;
             displayGameOver();
@@ -355,6 +359,9 @@ private:
         // Draw the banner at the bottom right corner
         window.draw(cornerBannerSprite);
 
+        // Draw the health at the top left corner
+        window.draw(healthSprite);
+        window.draw(healthbarSprite);
         if (gameOver) {
             window.draw(bannerSprite);
             window.draw(gameOverText);
@@ -495,10 +502,23 @@ public:
             std::cerr << "Error loading corner banner texture\n";
         }
         cornerBannerSprite.setTexture(cornerBannerTexture);
-        cornerBannerSprite.setPosition(WINDOW_WIDTH - cornerBannerTexture.getSize().x *4, WINDOW_HEIGHT - cornerBannerTexture.getSize().y*4);
-        cornerBannerSprite.setScale(4, 4);
-    }
+        cornerBannerSprite.setPosition(WINDOW_WIDTH - cornerBannerTexture.getSize().x *2, WINDOW_HEIGHT - cornerBannerTexture.getSize().y*2);
+        cornerBannerSprite.setScale(2, 2);
 
+    if (!healthTexture.loadFromFile("health.png")) {
+        std::cerr << "Error loading corner health texture\n";
+    }
+    healthSprite.setTexture(healthTexture);
+    healthSprite.setPosition(51, 0);
+    healthSprite.setScale(1, 1);
+
+    if (!healthbarTexture.loadFromFile("healthbar.png")) {
+        std::cerr << "Error loading corner healthbar texture\n";
+    }
+    healthbarSprite.setTexture(healthbarTexture);
+    healthbarSprite.setPosition(0, 0);
+    healthbarSprite.setScale(1, 1);
+}
     ~Game() {
         for (size_t i = 1; i < objects.size(); ++i) {
             delete objects[i];
