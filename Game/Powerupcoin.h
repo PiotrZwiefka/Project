@@ -18,7 +18,7 @@ public:
         sprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
         sprite.setScale(6,6);
     }
-
+//animates coins
     void update(float dt) {
         if (animationClock.getElapsedTime().asSeconds() >= frameTime) {
             currentFrame = (currentFrame + 1) % 12;

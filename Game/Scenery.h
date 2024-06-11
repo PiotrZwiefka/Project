@@ -12,6 +12,7 @@ public:
         texture.loadFromFile("Tilemap_Flat.png");
         sprite.setTexture(texture);
         sprite.setTextureRect(sf::IntRect(320, 0, 192, 192));
+        //makes the texture cover all screen no matter how big screen we create
         float scaleX = static_cast<float>(windowWidth) / 192;
         float scaleY = static_cast<float>(windowHeight) / 192;
         sprite.setScale(scaleX, scaleY);

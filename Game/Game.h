@@ -19,7 +19,7 @@ private:
     MainCharacter player;
     Scenery background;
     std::vector<GameObject*> objects;
-    int highScore;
+    int highScore; //Coins collected
     sf::Clock attackCooldownClock;
     sf::Clock enemySpawnClock;
     bool gameOver;
@@ -43,7 +43,7 @@ private:
                 window.close();
         }
     }
-
+//Function that takes keybord inputs
     void handleInput(float dt) {
         if (gameOver) return;
 
@@ -67,6 +67,7 @@ private:
                             objects.erase(objects.begin() + i);
                             delete enemy;
                             i--;
+                            //delates enemy when it has less or equal to 0hp
                         }
                     }
                 }
@@ -74,19 +75,18 @@ private:
             }
         }
     }
-
     void update(float dt) {
         if (gameOver) return;
 
         handleInput(dt);
         checkCollisions();
-        healthSprite.setTextureRect(sf::IntRect(0, 0, player.getHealth() * 10, 48));
+        healthSprite.setTextureRect(sf::IntRect(0, 0, player.getHealth() * 10, 48)); //healthbar update
         if (player.getHealth() <= 0) {
-            gameOver = true;
+            gameOver = true; // game over checking
             displayGameOver();
             return;
         }
-
+//makes player stay within window borders
         sf::FloatRect playerBounds = player.getBounds();
         if (playerBounds.left < 0)
             player.move(-playerBounds.left, 0);
@@ -96,6 +96,7 @@ private:
             player.move(WINDOW_WIDTH - playerBounds.left - playerBounds.width, 0);
         if (playerBounds.top + playerBounds.height > WINDOW_HEIGHT)
             player.move(0, WINDOW_HEIGHT - playerBounds.top - playerBounds.height);
+        //times enemies spawn so they dont spawn all at one time
         if (enemySpawnClock.getElapsedTime().asSeconds() >= ENEMY_SPAWN_TIME) {
             spawnEnemy();
             enemySpawnClock.restart();
@@ -106,7 +107,7 @@ private:
             if (enemy) {
                 enemy->moveTowards(player, dt);
                 enemy->updateAnimation(dt);
-
+//makes enemies attack player
                 if (enemy->getBounds().intersects(player.getBounds())) {
                     auto it = enemyCollisionClocks.find(enemy);
                     if (it == enemyCollisionClocks.end()) {
@@ -127,13 +128,14 @@ private:
         }
     }
 
-
+//checks colisions
     void checkCollisions() {
         bool isColliding = false;
 
         for (size_t i = 1; i < objects.size(); ++i) {
             if (isOverlapping(player.getBounds(), objects[i]->getBounds())) {
                 PowerUpCoin* coin = dynamic_cast<PowerUpCoin*>(objects[i]);
+                //if object that is coliding with player is coin it adds on to high score and deletes coin and places new
                 if (coin) {
                     highScore++;
                     objects.erase(objects.begin() + i);
@@ -145,14 +147,14 @@ private:
                 }
             }
         }
-
+        //slows player when they are coliding with bushes and slimes also with coins but they are imidiently deleted so its unnoticable
         if (isColliding) {
             player.setSpeedFactor(COLLISION_SPEED_FACTOR);
         } else {
             player.setSpeedFactor(1.0f);
         }
     }
-
+//renders all objects and text
     void render() {
         window.clear();
 
@@ -185,7 +187,7 @@ private:
     bool isOverlapping(sf::FloatRect rect1, sf::FloatRect rect2) {
         return rect1.intersects(rect2);
     }
-
+//places obstacles in way that they are not placed coiding and are far flom screen border
     void placeObstacles() {
         for (int i = 1; i <= 10; ++i) {
             bool placed = false;
@@ -212,13 +214,13 @@ private:
             }
         }
     }
-
+//places starting coins
     void placePowerUpCoins() {
         for (int i = 1; i <= 5; i++) {
             placeNewPowerUpCoin();
         }
     }
-
+//places new coin the same way bushes spawn at start
     void placeNewPowerUpCoin() {
         bool placed = false;
         while (!placed) {
@@ -243,7 +245,7 @@ private:
             }
         }
     }
-
+//spawns enemies at screen border so its like them going from outside of it
     void spawnEnemy() {
         int side = rand() % 4;
         float x = 0, y = 0;
@@ -270,7 +272,7 @@ private:
         Enemy* newEnemy = new Enemy(x, y);
         objects.push_back(newEnemy);
     }
-
+//displays game over data so the text banner and highscore
     void displayGameOver() {
         if (!font.loadFromFile("PixelOperator8.ttf")) {
             std::cerr << "Error loading font\n";
@@ -308,21 +310,21 @@ public:
         objects.push_back(&background);
         placeObstacles();
         placePowerUpCoins();
-
+//creates a baner that show controls
         if (!cornerBannerTexture.loadFromFile("Controls.png")) {
             std::cerr << "Error loading corner banner texture\n";
         }
         cornerBannerSprite.setTexture(cornerBannerTexture);
         cornerBannerSprite.setPosition(WINDOW_WIDTH - cornerBannerTexture.getSize().x *2, WINDOW_HEIGHT - cornerBannerTexture.getSize().y*2);
         cornerBannerSprite.setScale(2, 2);
-
+//creates the health indicator in healthbar
         if (!healthTexture.loadFromFile("health.png")) {
             std::cerr << "Error loading corner health texture\n";
         }
         healthSprite.setTexture(healthTexture);
         healthSprite.setPosition(51, 0);
         healthSprite.setScale(1, 1);
-
+//creates the overlay of the healthbar
         if (!healthbarTexture.loadFromFile("healthbar.png")) {
             std::cerr << "Error loading corner healthbar texture\n";
         }
@@ -335,7 +337,7 @@ public:
             delete objects[i];
         }
     }
-
+//runs the game
     void run() {
         sf::Clock clock;
         while (window.isOpen()) {

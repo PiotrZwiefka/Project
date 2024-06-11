@@ -20,6 +20,8 @@ public:
         sprite.setTextureRect(sf::IntRect(0,0,13,19));
         sprite.setScale(5,5);
     }
+    //handles inputs provided by update function from game
+    //and converts them into movement variables
     void moveKey(char direction, float dt) {
         float offsetX = 0.0f, offsetY = 0.0f;
         float speed = PLAYER_SPEED * speedFactor;
@@ -51,31 +53,32 @@ public:
     sf::FloatRect getBounds() const override {
         return sprite.getGlobalBounds();
     }
-
+//moves player by provided data
     void move(float offsetX, float offsetY) {
         sprite.move(offsetX, offsetY);
     }
-
+//changes speed factor
     void setSpeedFactor(float factor) {
         speedFactor = factor;
     }
-
+//outputs current speedfactor
     float getSpeedFactor() const {
         return speedFactor;
     }
-
+//outputs position in vector
     sf::Vector2f getPosition() const {
         return sprite.getPosition();
     }
-
+//lowers hp of player
     void decreaseHealth(int amount) {
         health -= amount;
         sprite.setTextureRect(sf::IntRect(0,19,13,19));
     }
-
+//outputs player health
     int getHealth() const {
         return health;
     }
+//changes player texture when he attacks and the cooldown ended
     void hit()
     {
         sprite.setTextureRect(sf::IntRect(13,19,13,19));

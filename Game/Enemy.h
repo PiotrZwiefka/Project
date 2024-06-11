@@ -26,7 +26,7 @@ public:
     void draw(sf::RenderWindow& window) override {
         window.draw(sprite);
     }
-
+//Animates enemy
     void updateAnimation(float dt) {
         if (animationClock.getElapsedTime().asSeconds() >= frameTime) {
             currentFrame = (currentFrame + 1) % 6;
@@ -42,7 +42,7 @@ public:
     sf::FloatRect getBounds() const override {
         return sprite.getGlobalBounds();
     }
-
+//Moves enemy towards player
     void moveTowards(MainCharacter& player, float dt) {
         sf::Vector2f playerPos = player.getPosition();
         sf::Vector2f enemyPos = sprite.getPosition();
@@ -51,7 +51,6 @@ public:
         direction /= length;
         sprite.move(direction * ENEMY_SPEED * dt);
     }
-
     void decreaseHealth(int amount) {
         health -= amount;
     }
