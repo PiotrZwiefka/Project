@@ -12,3 +12,13 @@ CONFIG(debug, debug|release){
 } else {
     LIBS += -lsfml-audio -lsfml-graphics -lsfml-network -lsfml-system -lsfml-window
 }
+
+HEADERS += \
+    Enemy.h \
+    Game.h \
+    MainCharacter.h \
+    Powerupcoin.h \
+    Scenery.h \
+    constants.h \
+    gameobject.h \
+    obstacle.h
